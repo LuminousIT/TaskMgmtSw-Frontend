@@ -1,5 +1,5 @@
 import React from "react";
-import { createTheme, ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
+import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import theme from "./theme-setup";
 import { CssBaseline } from "@mui/material";
 

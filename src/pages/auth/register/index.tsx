@@ -1,29 +1,41 @@
-import { Box, Button, TextField, Typography } from "@mui/material";
+import React, { useState } from "react";
+import { Box, Button, CircularProgress, IconButton, TextField, Typography } from "@mui/material";
 import { useForm } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { useAuth } from "../hooks/useAuth";
 
 type RegisterFormData = {
     name: string;
     email: string;
     password: string;
+    confirmPassword?: string;
 };
 
 const RegisterPage = () => {
+    const navigate = useNavigate()
+    const [showPassword, setShowPassword] = useState(false);
+    const { register: registerUser, isRegisterPending } = useAuth()
     const {
         register,
         handleSubmit,
         formState: { errors },
+        getValues,
     } = useForm<RegisterFormData>({
         defaultValues: {
             name: "",
             email: "",
             password: "",
+            confirmPassword: "",
         },
     });
 
     const onSubmit: SubmitHandler<RegisterFormData> = (data) => {
         console.log("Register form data:", data);
+        registerUser(data, () => {
+            navigate('/dashboard')
+        })
     };
 
     return (
@@ -75,7 +87,7 @@ const RegisterPage = () => {
                 />
                 <TextField
                     label="Password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     variant="outlined"
                     margin="normal"
                     fullWidth
@@ -92,9 +104,44 @@ const RegisterPage = () => {
                             message: "Password must contain at least one uppercase letter, one lowercase letter, and one number",
                         },
                     })}
+                    slotProps={{
+                        input: {
+                            endAdornment: (
+                                <IconButton onClick={() => setShowPassword(!showPassword)}>
+                                    {showPassword ? <Visibility /> : <VisibilityOff />}
+                                </IconButton>
+                            )
+                        }
+                    }}
                 />
-                <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
+                <TextField
+                    label="Confirm Password"
+                    type={showPassword ? "text" : "password"}
+                    variant="outlined"
+                    margin="normal"
+                    fullWidth
+                    error={!!errors.confirmPassword}
+                    {...register("confirmPassword", {
+                        required: "Confirm Password is required",
+                        validate: (value) => {
+                            const password = getValues("password");
+                            return password === value || "Passwords do not match";
+                        },
+                    })}
+                    helperText={errors.confirmPassword?.message}
+                    slotProps={{
+                        input: {
+                            endAdornment: (
+                                <IconButton onClick={() => setShowPassword(!showPassword)}>
+                                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                                </IconButton>
+                            )
+                        }
+                    }}
+                />
+                <Button loading={isRegisterPending} disabled={isRegisterPending} type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
                     Register
+                    {isRegisterPending && <CircularProgress size={"small"} />}
                 </Button>
                 <Typography variant="body2" sx={{ mt: 2 }}>
                     Already have an account?{" "}

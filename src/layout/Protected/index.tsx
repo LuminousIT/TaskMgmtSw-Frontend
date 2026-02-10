@@ -1,11 +1,15 @@
-import { Box } from "@mui/material";
+import { Box, Container } from "@mui/material";
 import React from "react";
+import { Outlet } from "react-router";
 
-const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const ProtectedLayout = () => {
     return (
-        <Box>
-            {children}
-        </Box>
+        <Container  >
+            <Box sx={{ p: 2 }}>
+                Protected Layout
+            </Box>
+            <Outlet />
+        </Container>
     )
 }
 

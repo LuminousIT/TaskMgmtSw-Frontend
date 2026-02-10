@@ -22,7 +22,7 @@ const UnProtectedLayout: React.FC = () => {
                 sx={{ borderBottom: '1px solid', borderColor: 'divider' }}
             >
                 <Box>
-                    logo
+                    TMS
                 </Box>
                 <Box>
                     <IconButton onClick={() => setMode(mode === 'light' ? 'dark' : 'light')}>

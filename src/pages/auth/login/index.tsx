@@ -1,21 +1,22 @@
-import { Box, Button, Checkbox, FormControlLabel, TextField, Typography } from "@mui/material";
+import { Box, Button, Checkbox, FormControlLabel, IconButton, TextField, Typography } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
-import { Link } from "react-router";
-
-type LoginFormData = {
-    email: string;
-    password: string;
-    rememberMe: boolean;
-};
+import { Link, useNavigate } from "react-router";
+import { useAuth } from "../hooks/useAuth";
+import type { ILoginPayload } from "@/api/auth/types";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { useState } from "react";
 
 const LoginPage = () => {
+    const [showPassword, setShowPassword] = useState(false);
+    const { login, isLoginPending } = useAuth()
+    const navigate = useNavigate()
     const {
         register,
         handleSubmit,
         control,
         formState: { errors },
-    } = useForm<LoginFormData>({
+    } = useForm<ILoginPayload>({
         defaultValues: {
             email: "",
             password: "",
@@ -23,8 +24,11 @@ const LoginPage = () => {
         },
     });
 
-    const onSubmit: SubmitHandler<LoginFormData> = (data) => {
+    const onSubmit: SubmitHandler<ILoginPayload> = (data) => {
         console.log("Login form data:", data);
+        login(data, () => {
+            navigate('/dashboard')
+        })
     };
 
     return (
@@ -61,7 +65,7 @@ const LoginPage = () => {
                 />
                 <TextField
                     label="Password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     variant="outlined"
                     margin="normal"
                     fullWidth
@@ -74,6 +78,15 @@ const LoginPage = () => {
                             message: "Password must be at least 6 characters",
                         },
                     })}
+                    slotProps={{
+                        input: {
+                            "endAdornment": (
+                                <IconButton onClick={() => setShowPassword(!showPassword)}>
+                                    {showPassword ? <Visibility /> : <VisibilityOff />}
+                                </IconButton>
+                            )
+                        }
+                    }}
                 />
                 <Controller
                     name="rememberMe"
@@ -86,7 +99,7 @@ const LoginPage = () => {
                         />
                     )}
                 />
-                <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
+                <Button loading={isLoginPending} disabled={isLoginPending} type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
                     Login
                 </Button>
                 <Typography variant="body2" sx={{ mt: 2 }}>
