@@ -3,6 +3,7 @@ import { ProtectedLayout, UnProtectedLayout } from "./layout";
 import { AuthGuard } from "./guards";
 import { LoginPage, RegisterPage } from "./pages/auth";
 import DashboardPage from "./pages/dashboard";
+import Tasks from "./pages/tasks";
 import GuestGuard from "./guards/UnauthGuard";
 
 const ProtectedRoutes = () => (
@@ -29,11 +30,11 @@ const router = createBrowserRouter([
         ],
     },
     {
-        path: "dashboard",
+        path: "",
         Component: ProtectedRoutes,
         children: [
-            { index: true, path: "", Component: DashboardPage },
-
+            { index: true, path: "dashboard", Component: DashboardPage },
+            { path: "tasks", Component: Tasks },
         ]
     }
 ])
