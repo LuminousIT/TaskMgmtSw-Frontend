@@ -3,7 +3,7 @@ import { styled } from "@mui/material/styles";
 import React from "react";
 import { Outlet } from "react-router";
 
-const CenterBox = styled(Box)(({ theme }) => ({
+const CenterBox = styled(Box)(({ }) => ({
     alignItems: 'center',
     display: 'flex',
     justifyContent: 'center',
