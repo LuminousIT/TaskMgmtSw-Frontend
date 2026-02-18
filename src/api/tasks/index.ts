@@ -1,11 +1,14 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "../index";
 import type { CustomUseMutationOptions, CustomUseQueryOptions } from "../types";
 import type {
+    ICreateTagPayload,
+    ICreateTagResponse,
     ICreateTaskPayload,
     ICreateTaskResponse,
     IGetTagsResponse,
     ITag,
+    TCreateTagRequest,
     TCreateTaskRequest,
     TGetTagsRequest,
 } from "./types";
@@ -29,6 +32,9 @@ export const useCreateTaskMutation = (
     });
 };
 
+export const createTagRequest: TCreateTagRequest = async (payload) =>
+    (await axios.post("/api/v1/tags", payload)).data;
+
 export const useGetTagsQuery = (options?: CustomUseQueryOptions<ITag[]>) => {
     return useQuery({
         ...options,
@@ -36,6 +42,20 @@ export const useGetTagsQuery = (options?: CustomUseQueryOptions<ITag[]>) => {
         queryFn: async () => {
             const response = await getTagsRequest();
             return response.tags;
+        },
+    });
+};
+
+export const useCreateTagMutation = (
+    options?: CustomUseMutationOptions<ICreateTagPayload, ICreateTagResponse>
+) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        ...options,
+        mutationFn: (payload: ICreateTagPayload) => createTagRequest(payload),
+        onSuccess: (...args) => {
+            queryClient.invalidateQueries({ queryKey: [GET_TAGS] });
+            options?.onSuccess?.(...args);
         },
     });
 };

@@ -60,5 +60,15 @@ export interface ICreateTaskFormValues {
     tags: string[];
 }
 
+export interface ICreateTagPayload {
+    name: string;
+    color?: string;
+}
+
+export interface ICreateTagResponse {
+    tag: ITag;
+}
+
 export type TCreateTaskRequest = (data: ICreateTaskPayload) => Promise<ICreateTaskResponse>;
 export type TGetTagsRequest = () => Promise<IGetTagsResponse>;
+export type TCreateTagRequest = (data: ICreateTagPayload) => Promise<ICreateTagResponse>;
