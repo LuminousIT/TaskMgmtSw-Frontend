@@ -8,17 +8,23 @@ import {
     DialogContent,
     DialogTitle,
     IconButton,
-    MenuItem,
     Stack,
     TextField,
     Typography,
 } from "@mui/material";
-import { Close } from "@mui/icons-material";
+import {
+    CalendarToday,
+    Close,
+    Flag,
+    RadioButtonChecked,
+} from "@mui/icons-material";
 import { useForm, Controller } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
 import { toast } from "react-toastify";
 import { useCreateTaskMutation, useGetTagsQuery } from "@/api/tasks";
 import type { ICreateTaskFormValues, ICreateTaskPayload } from "@/api/tasks/types";
+import InlineTextField from "@/components/InlineTextField";
+import PopoverSelect from "@/components/PopoverSelect";
 
 interface CreateTaskModalProps {
     open: boolean;
@@ -47,6 +53,8 @@ const CreateTaskModal = ({ open, onClose }: CreateTaskModalProps) => {
         handleSubmit,
         control,
         reset,
+        setValue,
+        watch,
         formState: { errors },
     } = useForm<ICreateTaskFormValues>({
         defaultValues: {
@@ -58,6 +66,13 @@ const CreateTaskModal = ({ open, onClose }: CreateTaskModalProps) => {
             tags: [],
         },
     });
+
+    const statusValue = watch("status");
+    const priorityValue = watch("priority");
+    const dueDateValue = watch("dueDate");
+
+    const statusLabel = STATUS_OPTIONS.find((o) => o.value === statusValue)?.label ?? "To Do";
+    const priorityLabel = PRIORITY_OPTIONS.find((o) => o.value === priorityValue)?.label ?? "Medium";
 
     const onSubmit: SubmitHandler<ICreateTaskFormValues> = (data) => {
         const payload: ICreateTaskPayload = {
@@ -125,11 +140,8 @@ const CreateTaskModal = ({ open, onClose }: CreateTaskModalProps) => {
             <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
                 <DialogContent sx={{ px: 3, pt: 3, pb: 1 }}>
                     <Stack spacing={2.5}>
-                        <TextField
-                            // label="Title"
-                            variant="filled"
+                        <InlineTextField
                             placeholder="Task title here..."
-                            fullWidth
                             error={!!errors.title}
                             helperText={errors.title?.message}
                             {...register("title", {
@@ -139,11 +151,18 @@ const CreateTaskModal = ({ open, onClose }: CreateTaskModalProps) => {
                                     message: "Title must be at most 255 characters",
                                 },
                             })}
+                            sx={{
+                                "& .MuiInputBase-root": {
+                                    fontSize: "1.25rem",
+                                    fontWeight: 600,
+                                },
+                                "& .MuiInputBase-input::placeholder": {
+                                    fontWeight: 600,
+                                },
+                            }}
                         />
-                        <TextField
-                            label="Description"
-                            variant="filled"
-                            fullWidth
+                        <InlineTextField
+                            placeholder="Add a description..."
                             multiline
                             rows={3}
                             error={!!errors.description}
@@ -154,53 +173,44 @@ const CreateTaskModal = ({ open, onClose }: CreateTaskModalProps) => {
                         />
 
                         <Box>
-                            <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: "block" }}>
                                 Details
                             </Typography>
-                            <Box sx={{ display: "flex", gap: 2 }}>
-                                <TextField
+                            <Stack spacing={2} direction="row" flexWrap="wrap">
+                                <PopoverSelect
+                                    icon={<RadioButtonChecked sx={{ fontSize: 20 }} />}
                                     label="Status"
-                                    variant="filled"
-                                    fullWidth
-                                    select
-                                    defaultValue="todo"
-                                    error={!!errors.status}
-                                    helperText={errors.status?.message}
-                                    {...register("status")}
-                                >
-                                    {STATUS_OPTIONS.map((option) => (
-                                        <MenuItem key={option.value} value={option.value}>
-                                            {option.label}
-                                        </MenuItem>
-                                    ))}
-                                </TextField>
-                                <TextField
+                                    displayValue={statusLabel}
+                                    options={STATUS_OPTIONS}
+                                    value={statusValue}
+                                    onChange={(v) => setValue("status", v as ICreateTaskFormValues["status"])}
+                                />
+                                <PopoverSelect
+                                    icon={<Flag sx={{ fontSize: 20 }} />}
                                     label="Priority"
-                                    variant="filled"
-                                    fullWidth
-                                    select
-                                    defaultValue="medium"
-                                    error={!!errors.priority}
-                                    helperText={errors.priority?.message}
-                                    {...register("priority")}
+                                    displayValue={priorityLabel}
+                                    options={PRIORITY_OPTIONS}
+                                    value={priorityValue}
+                                    onChange={(v) => setValue("priority", v as ICreateTaskFormValues["priority"])}
+                                />
+                                <PopoverSelect
+                                    icon={<CalendarToday sx={{ fontSize: 20 }} />}
+                                    label="Due Date"
+                                    displayValue={dueDateValue || "None"}
+                                    displayColor={dueDateValue ? "text.primary" : "text.disabled"}
                                 >
-                                    {PRIORITY_OPTIONS.map((option) => (
-                                        <MenuItem key={option.value} value={option.value}>
-                                            {option.label}
-                                        </MenuItem>
-                                    ))}
-                                </TextField>
-                            </Box>
+                                    <Box sx={{ p: 2 }}>
+                                        <TextField
+                                            type="date"
+                                            size="small"
+                                            value={dueDateValue}
+                                            onChange={(e) => setValue("dueDate", e.target.value)}
+                                            slotProps={{ inputLabel: { shrink: true } }}
+                                        />
+                                    </Box>
+                                </PopoverSelect>
+                            </Stack>
                         </Box>
-
-                        <TextField
-                            label="Due Date"
-                            type="date"
-                            variant="filled"
-                            fullWidth
-                            slotProps={{ inputLabel: { shrink: true } }}
-                            {...register("dueDate")}
-                        />
 
                         <Controller
                             name="tags"
