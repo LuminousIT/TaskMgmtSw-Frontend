@@ -21,6 +21,7 @@ interface PopoverSelectProps {
     value?: string;
     onChange?: (value: string) => void;
     children?: React.ReactNode;
+    onClose?: () => void;
 }
 
 const PopoverSelect = ({
@@ -32,6 +33,7 @@ const PopoverSelect = ({
     value,
     onChange,
     children,
+    onClose: onCloseProp,
 }: PopoverSelectProps) => {
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const open = Boolean(anchorEl);
@@ -42,6 +44,7 @@ const PopoverSelect = ({
 
     const handleClose = () => {
         setAnchorEl(null);
+        onCloseProp?.();
     };
 
     return (

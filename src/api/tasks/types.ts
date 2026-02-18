@@ -69,6 +69,23 @@ export interface ICreateTagResponse {
     tag: ITag;
 }
 
+export interface IUpdateTagPayload {
+    name?: string;
+    color?: string;
+}
+
+export interface IUpdateTagResponse {
+    tag: ITag;
+}
+
+export interface IDeleteTagResponse {
+    success: boolean;
+    message: string;
+    deletedAt: string;
+}
+
 export type TCreateTaskRequest = (data: ICreateTaskPayload) => Promise<ICreateTaskResponse>;
 export type TGetTagsRequest = () => Promise<IGetTagsResponse>;
 export type TCreateTagRequest = (data: ICreateTagPayload) => Promise<ICreateTagResponse>;
+export type TUpdateTagRequest = (id: string, data: IUpdateTagPayload) => Promise<IUpdateTagResponse>;
+export type TDeleteTagRequest = (id: string) => Promise<IDeleteTagResponse>;

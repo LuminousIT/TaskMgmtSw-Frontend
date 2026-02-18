@@ -6,11 +6,16 @@ import type {
     ICreateTagResponse,
     ICreateTaskPayload,
     ICreateTaskResponse,
+    IDeleteTagResponse,
     IGetTagsResponse,
     ITag,
+    IUpdateTagPayload,
+    IUpdateTagResponse,
     TCreateTagRequest,
     TCreateTaskRequest,
+    TDeleteTagRequest,
     TGetTagsRequest,
+    TUpdateTagRequest,
 } from "./types";
 import { GET_TAGS } from "./constants";
 
@@ -53,6 +58,41 @@ export const useCreateTagMutation = (
     return useMutation({
         ...options,
         mutationFn: (payload: ICreateTagPayload) => createTagRequest(payload),
+        onSuccess: (...args) => {
+            queryClient.invalidateQueries({ queryKey: [GET_TAGS] });
+            options?.onSuccess?.(...args);
+        },
+    });
+};
+
+export const updateTagRequest: TUpdateTagRequest = async (id, payload) =>
+    (await axios.patch(`/api/v1/tags/${id}`, payload)).data;
+
+export const deleteTagRequest: TDeleteTagRequest = async (id) =>
+    (await axios.delete(`/api/v1/tags/${id}`)).data;
+
+export const useUpdateTagMutation = (
+    options?: CustomUseMutationOptions<{ id: string } & IUpdateTagPayload, IUpdateTagResponse>
+) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        ...options,
+        mutationFn: ({ id, ...payload }: { id: string } & IUpdateTagPayload) =>
+            updateTagRequest(id, payload),
+        onSuccess: (...args) => {
+            queryClient.invalidateQueries({ queryKey: [GET_TAGS] });
+            options?.onSuccess?.(...args);
+        },
+    });
+};
+
+export const useDeleteTagMutation = (
+    options?: CustomUseMutationOptions<string, IDeleteTagResponse>
+) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        ...options,
+        mutationFn: (id: string) => deleteTagRequest(id),
         onSuccess: (...args) => {
             queryClient.invalidateQueries({ queryKey: [GET_TAGS] });
             options?.onSuccess?.(...args);
