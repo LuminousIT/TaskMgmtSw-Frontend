@@ -23,7 +23,7 @@ export const AuthContext = createContext<IAuthContext>(
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<TUser | null>(null)
-    const [loading, setLoading] = useState<boolean>(false)
+    const [loading, setLoading] = useState<boolean>(true)
     const { mutate, data, status, isPending: isLoginPending } = useLoginMutation()
     const { mutate: registerMutate, data: registerData, isPending: isRegisterPending } = useRegisterMutation()
 
