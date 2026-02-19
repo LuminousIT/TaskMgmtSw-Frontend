@@ -19,20 +19,21 @@ import {
 import { useForm } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
 import { toast } from "react-toastify";
-import { useCreateTaskMutation } from "@/api/tasks";
-import type { ICreateTaskFormValues, ICreateTaskPayload } from "@/api/tasks/types";
+import { useUpdateTaskMutation } from "@/api/tasks";
+import type { ICreateTaskFormValues, ITask, IUpdateTaskPayload } from "@/api/tasks/types";
 import InlineTextField from "@/components/InlineTextField";
 import PopoverSelect from "@/components/PopoverSelect";
 import TagsPicker from "@/components/TagsPicker";
 import { STATUS_OPTIONS, PRIORITY_OPTIONS } from "../constants";
 
-interface CreateTaskModalProps {
+interface TaskDetailModalProps {
+    task: ITask;
     open: boolean;
     onClose: () => void;
 }
 
-const CreateTaskModal = ({ open, onClose }: CreateTaskModalProps) => {
-    const { mutate: createTask, isPending } = useCreateTaskMutation();
+const TaskDetailModal = ({ task, open, onClose }: TaskDetailModalProps) => {
+    const { mutate: updateTask, isPending } = useUpdateTaskMutation();
 
     const {
         register,
@@ -40,15 +41,15 @@ const CreateTaskModal = ({ open, onClose }: CreateTaskModalProps) => {
         reset,
         setValue,
         watch,
-        formState: { errors },
+        formState: { errors, isDirty },
     } = useForm<ICreateTaskFormValues>({
         defaultValues: {
-            title: "",
-            description: "",
-            status: "todo",
-            priority: "medium",
-            dueDate: "",
-            tags: [],
+            title: task.title,
+            description: task.description,
+            status: task.status,
+            priority: task.priority,
+            dueDate: task.dueDate ?? "",
+            tags: task.tags.map((t) => t.id),
         },
     });
 
@@ -61,28 +62,38 @@ const CreateTaskModal = ({ open, onClose }: CreateTaskModalProps) => {
     const priorityLabel = PRIORITY_OPTIONS.find((o) => o.value === priorityValue)?.label ?? "Medium";
 
     const onSubmit: SubmitHandler<ICreateTaskFormValues> = (data) => {
-        const payload: ICreateTaskPayload = {
-            title: data.title,
-            description: data.description,
-            status: data.status,
-            priority: data.priority,
-            clientId: crypto.randomUUID(),
-            ...(data.dueDate && { dueDate: data.dueDate }),
-            ...(data.tags.length > 0 && { tags: data.tags }),
-        };
+        const payload: IUpdateTaskPayload = {};
 
-        createTask(payload, {
-            onSuccess: () => {
-                toast.success("Task created successfully!");
-                reset();
-                onClose();
-            },
-            onError: (error) => {
-                const message =
-                    error.response?.data?.message || "Failed to create task.";
-                toast.error(message);
-            },
-        });
+        if (data.title !== task.title) payload.title = data.title;
+        if (data.description !== task.description) payload.description = data.description;
+        if (data.status !== task.status) payload.status = data.status;
+        if (data.priority !== task.priority) payload.priority = data.priority;
+
+        const newDueDate = data.dueDate || null;
+        if (newDueDate !== task.dueDate) payload.dueDate = newDueDate;
+
+        const originalTagIds = task.tags.map((t) => t.id).sort().join(",");
+        const newTagIds = [...data.tags].sort().join(",");
+        if (originalTagIds !== newTagIds) payload.tags = data.tags;
+
+        if (Object.keys(payload).length === 0) {
+            onClose();
+            return;
+        }
+
+        updateTask(
+            { id: task.id, ...payload },
+            {
+                onSuccess: () => {
+                    toast.success("Task updated successfully!");
+                    onClose();
+                },
+                onError: (error) => {
+                    const message = error.response?.data?.message || "Failed to update task.";
+                    toast.error(message);
+                },
+            }
+        );
     };
 
     const handleClose = () => {
@@ -98,12 +109,8 @@ const CreateTaskModal = ({ open, onClose }: CreateTaskModalProps) => {
             fullWidth
             TransitionProps={{ timeout: 300 }}
             slotProps={{
-                paper: {
-                    sx: { borderRadius: 3 },
-                },
-                backdrop: {
-                    sx: { backdropFilter: "blur(4px)" },
-                },
+                paper: { sx: { borderRadius: 3 } },
+                backdrop: { sx: { backdropFilter: "blur(4px)" } },
             }}
         >
             <DialogTitle
@@ -117,7 +124,7 @@ const CreateTaskModal = ({ open, onClose }: CreateTaskModalProps) => {
                 }}
             >
                 <Typography variant="h6" component="span" fontWeight={600}>
-                    Create Task
+                    Edit Task
                 </Typography>
                 <IconButton onClick={handleClose} size="small" sx={{ color: "text.secondary" }}>
                     <Close fontSize="small" />
@@ -169,7 +176,7 @@ const CreateTaskModal = ({ open, onClose }: CreateTaskModalProps) => {
                                     displayValue={statusLabel}
                                     options={STATUS_OPTIONS}
                                     value={statusValue}
-                                    onChange={(v) => setValue("status", v as ICreateTaskFormValues["status"])}
+                                    onChange={(v) => setValue("status", v as ICreateTaskFormValues["status"], { shouldDirty: true })}
                                 />
                                 <PopoverSelect
                                     icon={<Flag sx={{ fontSize: 20 }} />}
@@ -177,7 +184,7 @@ const CreateTaskModal = ({ open, onClose }: CreateTaskModalProps) => {
                                     displayValue={priorityLabel}
                                     options={PRIORITY_OPTIONS}
                                     value={priorityValue}
-                                    onChange={(v) => setValue("priority", v as ICreateTaskFormValues["priority"])}
+                                    onChange={(v) => setValue("priority", v as ICreateTaskFormValues["priority"], { shouldDirty: true })}
                                 />
                                 <PopoverSelect
                                     icon={<CalendarToday sx={{ fontSize: 20 }} />}
@@ -190,7 +197,7 @@ const CreateTaskModal = ({ open, onClose }: CreateTaskModalProps) => {
                                             type="date"
                                             size="small"
                                             value={dueDateValue}
-                                            onChange={(e) => setValue("dueDate", e.target.value)}
+                                            onChange={(e) => setValue("dueDate", e.target.value, { shouldDirty: true })}
                                             slotProps={{ inputLabel: { shrink: true } }}
                                         />
                                     </Box>
@@ -199,10 +206,16 @@ const CreateTaskModal = ({ open, onClose }: CreateTaskModalProps) => {
                             <Box sx={{ mt: 1 }}>
                                 <TagsPicker
                                     value={tagsValue}
-                                    onChange={(ids) => setValue("tags", ids)}
+                                    onChange={(ids) => setValue("tags", ids, { shouldDirty: true })}
                                 />
                             </Box>
                         </Box>
+
+                        <Typography variant="caption" color="text.disabled">
+                            Created {new Date(task.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                            {" · "}
+                            Updated {new Date(task.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </Typography>
                     </Stack>
                 </DialogContent>
                 <DialogActions
@@ -219,10 +232,10 @@ const CreateTaskModal = ({ open, onClose }: CreateTaskModalProps) => {
                         variant="contained"
                         disableElevation
                         loading={isPending}
-                        disabled={isPending}
+                        disabled={isPending || !isDirty}
                         sx={{ borderRadius: 2, px: 3 }}
                     >
-                        Create
+                        Save
                     </Button>
                 </DialogActions>
             </Box>
@@ -230,4 +243,4 @@ const CreateTaskModal = ({ open, onClose }: CreateTaskModalProps) => {
     );
 };
 
-export default CreateTaskModal;
+export default TaskDetailModal;

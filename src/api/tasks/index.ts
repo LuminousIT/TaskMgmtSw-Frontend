@@ -7,17 +7,25 @@ import type {
     ICreateTaskPayload,
     ICreateTaskResponse,
     IDeleteTagResponse,
+    IDeleteTaskResponse,
+    IGetTasksParams,
+    IGetTasksResponse,
     IGetTagsResponse,
     ITag,
     IUpdateTagPayload,
     IUpdateTagResponse,
+    IUpdateTaskPayload,
+    IUpdateTaskResponse,
     TCreateTagRequest,
     TCreateTaskRequest,
     TDeleteTagRequest,
+    TDeleteTaskRequest,
+    TGetTasksRequest,
     TGetTagsRequest,
     TUpdateTagRequest,
+    TUpdateTaskRequest,
 } from "./types";
-import { GET_TAGS } from "./constants";
+import { GET_TAGS, GET_TASKS } from "./constants";
 
 export const createTaskRequest: TCreateTaskRequest = async (payload) =>
     (await axios.post("/api/v1/tasks", payload)).data;
@@ -25,15 +33,31 @@ export const createTaskRequest: TCreateTaskRequest = async (payload) =>
 export const getTagsRequest: TGetTagsRequest = async () =>
     (await axios.get("/api/v1/tags")).data;
 
+export const getTasksRequest: TGetTasksRequest = async (params) =>
+    (await axios.get("/api/v1/tasks", { params })).data;
+
 export const useCreateTaskMutation = (
     options?: CustomUseMutationOptions<ICreateTaskPayload, ICreateTaskResponse>
 ) => {
+    const queryClient = useQueryClient();
     return useMutation({
         ...options,
         mutationFn: (payload: ICreateTaskPayload) => createTaskRequest(payload),
         onSuccess: (...args) => {
+            queryClient.invalidateQueries({ queryKey: [GET_TASKS] });
             options?.onSuccess?.(...args);
         },
+    });
+};
+
+export const useGetTasksQuery = (
+    params?: IGetTasksParams,
+    options?: CustomUseQueryOptions<IGetTasksResponse>
+) => {
+    return useQuery({
+        ...options,
+        queryKey: [GET_TASKS, params],
+        queryFn: () => getTasksRequest(params),
     });
 };
 
@@ -95,6 +119,41 @@ export const useDeleteTagMutation = (
         mutationFn: (id: string) => deleteTagRequest(id),
         onSuccess: (...args) => {
             queryClient.invalidateQueries({ queryKey: [GET_TAGS] });
+            options?.onSuccess?.(...args);
+        },
+    });
+};
+
+export const updateTaskRequest: TUpdateTaskRequest = async (id, payload) =>
+    (await axios.patch(`/api/v1/tasks/${id}`, payload)).data;
+
+export const deleteTaskRequest: TDeleteTaskRequest = async (id) =>
+    (await axios.delete(`/api/v1/tasks/${id}`)).data;
+
+export const useUpdateTaskMutation = (
+    options?: CustomUseMutationOptions<{ id: string } & IUpdateTaskPayload, IUpdateTaskResponse>
+) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        ...options,
+        mutationFn: ({ id, ...payload }: { id: string } & IUpdateTaskPayload) =>
+            updateTaskRequest(id, payload),
+        onSuccess: (...args) => {
+            queryClient.invalidateQueries({ queryKey: [GET_TASKS] });
+            options?.onSuccess?.(...args);
+        },
+    });
+};
+
+export const useDeleteTaskMutation = (
+    options?: CustomUseMutationOptions<string, IDeleteTaskResponse>
+) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        ...options,
+        mutationFn: (id: string) => deleteTaskRequest(id),
+        onSuccess: (...args) => {
+            queryClient.invalidateQueries({ queryKey: [GET_TASKS] });
             options?.onSuccess?.(...args);
         },
     });

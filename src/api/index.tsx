@@ -10,6 +10,10 @@ instance.interceptors.request.use(
         const token = localStorage.getItem("token");
         if (token) {
             config.headers["Authorization"] = `Bearer ${token}`;
+            const methodsWithBody = ["post", "put", "patch"];
+            if (methodsWithBody.includes(config.method?.toLowerCase() ?? "")) {
+                config.headers["Content-Type"] = "application/json";
+            }
         }
         return config;
     },

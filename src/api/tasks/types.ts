@@ -84,8 +84,55 @@ export interface IDeleteTagResponse {
     deletedAt: string;
 }
 
+export interface IGetTasksParams {
+    page?: number;
+    limit?: number;
+    status?: TaskStatus;
+    priority?: TaskPriority;
+    dueAfter?: string;
+    dueBefore?: string;
+    search?: string;
+    tags?: string;
+    sortBy?: "createdAt" | "updatedAt" | "dueDate" | "priority" | "title" | "status";
+    sortOrder?: "asc" | "desc";
+}
+
+export interface IGetTasksResponse {
+    tasks: ITask[];
+    pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+        hasMore: boolean;
+    };
+    filters: { applied: string[] };
+    syncMetadata: { latestVersion: number; serverTime: string };
+}
+
+export interface IUpdateTaskPayload {
+    title?: string;
+    description?: string;
+    status?: TaskStatus;
+    priority?: TaskPriority;
+    dueDate?: string | null;
+    tags?: string[];
+}
+
+export interface IUpdateTaskResponse {
+    task: ITask;
+}
+
+export interface IDeleteTaskResponse {
+    success: boolean;
+    message: string;
+}
+
 export type TCreateTaskRequest = (data: ICreateTaskPayload) => Promise<ICreateTaskResponse>;
+export type TGetTasksRequest = (params?: IGetTasksParams) => Promise<IGetTasksResponse>;
 export type TGetTagsRequest = () => Promise<IGetTagsResponse>;
 export type TCreateTagRequest = (data: ICreateTagPayload) => Promise<ICreateTagResponse>;
 export type TUpdateTagRequest = (id: string, data: IUpdateTagPayload) => Promise<IUpdateTagResponse>;
 export type TDeleteTagRequest = (id: string) => Promise<IDeleteTagResponse>;
+export type TUpdateTaskRequest = (id: string, data: IUpdateTaskPayload) => Promise<IUpdateTaskResponse>;
+export type TDeleteTaskRequest = (id: string) => Promise<IDeleteTaskResponse>;
