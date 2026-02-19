@@ -8,10 +8,11 @@ import { STATUS_OPTIONS } from "../constants";
 interface StatusChipProps {
     status: TaskStatus;
     taskId: string;
+    version: number;
     onClick?: (e: React.MouseEvent) => void;
 }
 
-const StatusChip = ({ status, taskId, onClick }: StatusChipProps) => {
+const StatusChip = ({ status, taskId, version, onClick }: StatusChipProps) => {
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const { mutate: updateTask, isPending } = useUpdateTaskMutation();
 
@@ -19,7 +20,7 @@ const StatusChip = ({ status, taskId, onClick }: StatusChipProps) => {
 
     const handleChange = (newStatus: TaskStatus) => {
         updateTask(
-            { id: taskId, status: newStatus },
+            { id: taskId, status: newStatus, version },
             {
                 onError: (error) => {
                     toast.error(error.response?.data?.message || "Failed to update status");

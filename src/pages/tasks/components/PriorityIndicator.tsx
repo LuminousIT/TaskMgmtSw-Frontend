@@ -9,10 +9,11 @@ import { PRIORITY_OPTIONS } from "../constants";
 interface PriorityIndicatorProps {
     priority: TaskPriority;
     taskId: string;
+    version: number;
     onClick?: (e: React.MouseEvent) => void;
 }
 
-const PriorityIndicator = ({ priority, taskId, onClick }: PriorityIndicatorProps) => {
+const PriorityIndicator = ({ priority, taskId, version, onClick }: PriorityIndicatorProps) => {
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const { mutate: updateTask, isPending } = useUpdateTaskMutation();
 
@@ -20,7 +21,7 @@ const PriorityIndicator = ({ priority, taskId, onClick }: PriorityIndicatorProps
 
     const handleChange = (newPriority: TaskPriority) => {
         updateTask(
-            { id: taskId, priority: newPriority },
+            { id: taskId, priority: newPriority, version },
             {
                 onError: (error) => {
                     toast.error(error.response?.data?.message || "Failed to update priority");

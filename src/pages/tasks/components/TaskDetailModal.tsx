@@ -82,7 +82,7 @@ const TaskDetailModal = ({ task, open, onClose }: TaskDetailModalProps) => {
         }
 
         updateTask(
-            { id: task.id, ...payload },
+            { id: task.id, ...payload, version: task.version },
             {
                 onSuccess: () => {
                     toast.success("Task updated successfully!");

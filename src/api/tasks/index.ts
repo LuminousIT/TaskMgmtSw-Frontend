@@ -7,6 +7,7 @@ import type {
     ICreateTaskPayload,
     ICreateTaskResponse,
     IDeleteTagResponse,
+    IDeleteTaskPayload,
     IDeleteTaskResponse,
     IGetTasksParams,
     IGetTasksResponse,
@@ -127,8 +128,8 @@ export const useDeleteTagMutation = (
 export const updateTaskRequest: TUpdateTaskRequest = async (id, payload) =>
     (await axios.patch(`/api/v1/tasks/${id}`, payload)).data;
 
-export const deleteTaskRequest: TDeleteTaskRequest = async (id) =>
-    (await axios.delete(`/api/v1/tasks/${id}`)).data;
+export const deleteTaskRequest: TDeleteTaskRequest = async (id, data) =>
+    (await axios.delete(`/api/v1/tasks/${id}`, { data })).data;
 
 export const useUpdateTaskMutation = (
     options?: CustomUseMutationOptions<{ id: string } & IUpdateTaskPayload, IUpdateTaskResponse>
@@ -146,12 +147,13 @@ export const useUpdateTaskMutation = (
 };
 
 export const useDeleteTaskMutation = (
-    options?: CustomUseMutationOptions<string, IDeleteTaskResponse>
+    options?: CustomUseMutationOptions<{ id: string; version: number }, IDeleteTaskResponse>
 ) => {
     const queryClient = useQueryClient();
     return useMutation({
         ...options,
-        mutationFn: (id: string) => deleteTaskRequest(id),
+        mutationFn: ({ id, version }: { id: string; version: number }) =>
+            deleteTaskRequest(id, { version }),
         onSuccess: (...args) => {
             queryClient.invalidateQueries({ queryKey: [GET_TASKS] });
             options?.onSuccess?.(...args);

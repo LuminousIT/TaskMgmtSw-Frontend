@@ -38,6 +38,7 @@ const TaskCard = ({ task, onClick }: TaskCardProps) => {
                         <StatusChip
                             status={task.status}
                             taskId={task.id}
+                            version={task.version}
                             onClick={(e) => e.stopPropagation()}
                         />
                         <IconButton
@@ -75,6 +76,7 @@ const TaskCard = ({ task, onClick }: TaskCardProps) => {
                         <PriorityIndicator
                             priority={task.priority}
                             taskId={task.id}
+                            version={task.version}
                             onClick={(e) => e.stopPropagation()}
                         />
 

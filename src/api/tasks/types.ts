@@ -117,6 +117,11 @@ export interface IUpdateTaskPayload {
     priority?: TaskPriority;
     dueDate?: string | null;
     tags?: string[];
+    version?: number;
+}
+
+export interface IDeleteTaskPayload {
+    version: number;
 }
 
 export interface IUpdateTaskResponse {
@@ -135,4 +140,4 @@ export type TCreateTagRequest = (data: ICreateTagPayload) => Promise<ICreateTagR
 export type TUpdateTagRequest = (id: string, data: IUpdateTagPayload) => Promise<IUpdateTagResponse>;
 export type TDeleteTagRequest = (id: string) => Promise<IDeleteTagResponse>;
 export type TUpdateTaskRequest = (id: string, data: IUpdateTaskPayload) => Promise<IUpdateTaskResponse>;
-export type TDeleteTaskRequest = (id: string) => Promise<IDeleteTaskResponse>;
+export type TDeleteTaskRequest = (id: string, data: IDeleteTaskPayload) => Promise<IDeleteTaskResponse>;

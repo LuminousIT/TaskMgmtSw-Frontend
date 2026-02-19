@@ -20,7 +20,7 @@ const DeleteConfirmDialog = ({ open, onClose, task }: DeleteConfirmDialogProps) 
     const { mutate: deleteTask, isPending } = useDeleteTaskMutation();
 
     const handleDelete = () => {
-        deleteTask(task.id, {
+        deleteTask({ id: task.id, version: task.version }, {
             onSuccess: () => {
                 toast.success("Task deleted");
                 onClose();
