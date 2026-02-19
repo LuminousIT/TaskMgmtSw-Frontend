@@ -21,6 +21,7 @@ import type { SubmitHandler } from "react-hook-form";
 import { toast } from "react-toastify";
 import { useCreateTaskMutation } from "@/api/tasks";
 import type { ICreateTaskFormValues, ICreateTaskPayload } from "@/api/tasks/types";
+import { getClientId } from "@/utils/clientId";
 import InlineTextField from "@/components/InlineTextField";
 import PopoverSelect from "@/components/PopoverSelect";
 import TagsPicker from "@/components/TagsPicker";
@@ -66,7 +67,7 @@ const CreateTaskModal = ({ open, onClose }: CreateTaskModalProps) => {
             description: data.description,
             status: data.status,
             priority: data.priority,
-            clientId: crypto.randomUUID(),
+            clientId: getClientId(),
             ...(data.dueDate && { dueDate: data.dueDate }),
             ...(data.tags.length > 0 && { tags: data.tags }),
         };

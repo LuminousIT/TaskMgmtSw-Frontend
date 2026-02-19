@@ -21,6 +21,7 @@ import type { SubmitHandler } from "react-hook-form";
 import { toast } from "react-toastify";
 import { useUpdateTaskMutation } from "@/api/tasks";
 import type { ICreateTaskFormValues, ITask, IUpdateTaskPayload } from "@/api/tasks/types";
+import { getClientId } from "@/utils/clientId";
 import InlineTextField from "@/components/InlineTextField";
 import PopoverSelect from "@/components/PopoverSelect";
 import TagsPicker from "@/components/TagsPicker";
@@ -62,7 +63,9 @@ const TaskDetailModal = ({ task, open, onClose }: TaskDetailModalProps) => {
     const priorityLabel = PRIORITY_OPTIONS.find((o) => o.value === priorityValue)?.label ?? "Medium";
 
     const onSubmit: SubmitHandler<ICreateTaskFormValues> = (data) => {
-        const payload: IUpdateTaskPayload = {};
+        const payload: IUpdateTaskPayload = {
+            clientId: getClientId(),
+        };
 
         if (data.title !== task.title) payload.title = data.title;
         if (data.description !== task.description) payload.description = data.description;

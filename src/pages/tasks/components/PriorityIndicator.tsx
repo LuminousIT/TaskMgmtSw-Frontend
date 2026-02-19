@@ -4,6 +4,7 @@ import { Flag } from "@mui/icons-material";
 import { toast } from "react-toastify";
 import { useUpdateTaskMutation } from "@/api/tasks";
 import type { TaskPriority } from "@/api/tasks/types";
+import { getClientId } from "@/utils/clientId";
 import { PRIORITY_OPTIONS } from "../constants";
 
 interface PriorityIndicatorProps {
@@ -21,7 +22,7 @@ const PriorityIndicator = ({ priority, taskId, version, onClick }: PriorityIndic
 
     const handleChange = (newPriority: TaskPriority) => {
         updateTask(
-            { id: taskId, priority: newPriority, version },
+            { id: taskId, priority: newPriority, version, clientId: getClientId() },
             {
                 onError: (error) => {
                     toast.error(error.response?.data?.message || "Failed to update priority");

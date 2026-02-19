@@ -118,6 +118,7 @@ export interface IUpdateTaskPayload {
     dueDate?: string | null;
     tags?: string[];
     version?: number;
+    clientId: string;
 }
 
 export interface IDeleteTaskPayload {

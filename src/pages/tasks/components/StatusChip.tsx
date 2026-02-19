@@ -3,6 +3,7 @@ import { Box, Chip, Menu, MenuItem } from "@mui/material";
 import { toast } from "react-toastify";
 import { useUpdateTaskMutation } from "@/api/tasks";
 import type { TaskStatus } from "@/api/tasks/types";
+import { getClientId } from "@/utils/clientId";
 import { STATUS_OPTIONS } from "../constants";
 
 interface StatusChipProps {
@@ -20,7 +21,7 @@ const StatusChip = ({ status, taskId, version, onClick }: StatusChipProps) => {
 
     const handleChange = (newStatus: TaskStatus) => {
         updateTask(
-            { id: taskId, status: newStatus, version },
+            { id: taskId, status: newStatus, version, clientId: getClientId() },
             {
                 onError: (error) => {
                     toast.error(error.response?.data?.message || "Failed to update status");
