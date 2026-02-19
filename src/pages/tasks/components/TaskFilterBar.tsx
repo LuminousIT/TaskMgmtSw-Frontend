@@ -14,6 +14,8 @@ import {
     Popover,
     Select,
     TextField,
+    ToggleButton,
+    ToggleButtonGroup,
     Typography,
 } from "@mui/material";
 import {
@@ -22,16 +24,22 @@ import {
     Clear,
     FilterList,
     Search,
+    ViewList,
+    ViewModule,
 } from "@mui/icons-material";
 import type { TaskFiltersState } from "../hooks/useTaskFilters";
 import type { IGetTasksParams, TaskPriority, TaskStatus } from "@/api/tasks/types";
 import { PRIORITY_OPTIONS, SORT_OPTIONS, STATUS_OPTIONS } from "../constants";
 import TagsPicker from "@/components/TagsPicker";
 
+export type TaskViewMode = "grid" | "list";
+
 interface TaskFilterBarProps {
     filters: TaskFiltersState;
     activeChips: { type: string; label: string; value?: string }[];
     hasActiveFilters: boolean;
+    viewMode: TaskViewMode;
+    onViewModeChange: (mode: TaskViewMode) => void;
     onSearchChange: (search: string) => void;
     onStatusesChange: (statuses: TaskStatus[]) => void;
     onPrioritiesChange: (priorities: TaskPriority[]) => void;
@@ -46,6 +54,8 @@ const TaskFilterBar = ({
     filters,
     activeChips,
     hasActiveFilters,
+    viewMode,
+    onViewModeChange,
     onSearchChange,
     onStatusesChange,
     onPrioritiesChange,
@@ -217,8 +227,8 @@ const TaskFilterBar = ({
                     onChange={onTagIdsChange}
                 />
 
-                {/* Sort */}
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, ml: "auto" }}>
+                {/* Sort + View toggle */}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, ml: "auto" }}>
                     <Select
                         size="small"
                         value={filters.sortBy}
@@ -235,6 +245,19 @@ const TaskFilterBar = ({
                     >
                         {filters.sortOrder === "asc" ? <ArrowUpward fontSize="small" /> : <ArrowDownward fontSize="small" />}
                     </IconButton>
+                    <ToggleButtonGroup
+                        value={viewMode}
+                        exclusive
+                        onChange={(_, v) => { if (v) onViewModeChange(v); }}
+                        size="small"
+                    >
+                        <ToggleButton value="grid" aria-label="Grid view">
+                            <ViewModule fontSize="small" />
+                        </ToggleButton>
+                        <ToggleButton value="list" aria-label="List view">
+                            <ViewList fontSize="small" />
+                        </ToggleButton>
+                    </ToggleButtonGroup>
                 </Box>
             </Box>
 

@@ -6,12 +6,24 @@ import type { ITask } from "@/api/tasks/types";
 import { useTaskFilters } from "./hooks/useTaskFilters";
 import CreateTaskModal from "./components/CreateTaskModal";
 import TaskFilterBar from "./components/TaskFilterBar";
+import type { TaskViewMode } from "./components/TaskFilterBar";
 import TaskGrid from "./components/TaskGrid";
+import TaskListView from "./components/TaskListView";
 import TaskDetailModal from "./components/TaskDetailModal";
+
+const VIEW_STORAGE_KEY = "tms_task_view";
 
 const Tasks = () => {
     const [createOpen, setCreateOpen] = useState(false);
     const [detailTask, setDetailTask] = useState<ITask | null>(null);
+    const [viewMode, setViewMode] = useState<TaskViewMode>(
+        () => (localStorage.getItem(VIEW_STORAGE_KEY) as TaskViewMode) || "grid"
+    );
+
+    const handleViewModeChange = (mode: TaskViewMode) => {
+        setViewMode(mode);
+        localStorage.setItem(VIEW_STORAGE_KEY, mode);
+    };
 
     const {
         filters,
@@ -52,6 +64,8 @@ const Tasks = () => {
                 filters={filters}
                 activeChips={activeFilterChips}
                 hasActiveFilters={hasActiveFilters}
+                viewMode={viewMode}
+                onViewModeChange={handleViewModeChange}
                 onSearchChange={setSearch}
                 onStatusesChange={setStatuses}
                 onPrioritiesChange={setPriorities}
@@ -62,15 +76,27 @@ const Tasks = () => {
                 onClearAll={clearAll}
             />
 
-            <TaskGrid
-                tasks={data?.tasks ?? []}
-                pagination={data?.pagination}
-                isLoading={isLoading}
-                isFetching={isFetching}
-                page={filters.page}
-                onPageChange={setPage}
-                onTaskClick={setDetailTask}
-            />
+            {viewMode === "grid" ? (
+                <TaskGrid
+                    tasks={data?.tasks ?? []}
+                    pagination={data?.pagination}
+                    isLoading={isLoading}
+                    isFetching={isFetching}
+                    page={filters.page}
+                    onPageChange={setPage}
+                    onTaskClick={setDetailTask}
+                />
+            ) : (
+                <TaskListView
+                    tasks={data?.tasks ?? []}
+                    pagination={data?.pagination}
+                    isLoading={isLoading}
+                    isFetching={isFetching}
+                    page={filters.page}
+                    onPageChange={setPage}
+                    onTaskClick={setDetailTask}
+                />
+            )}
 
             <CreateTaskModal open={createOpen} onClose={() => setCreateOpen(false)} />
             {detailTask && (
