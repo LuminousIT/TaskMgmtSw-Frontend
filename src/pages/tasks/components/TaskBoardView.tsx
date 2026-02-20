@@ -5,7 +5,8 @@ import { useDroppable } from "@dnd-kit/react";
 import type { DragEndEvent } from "@dnd-kit/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
-import type { ITask, TaskStatus } from "@/api/tasks/types";
+import type { IGetTasksResponse, ITask, TaskStatus } from "@/api/tasks/types";
+import type { ConflictData } from "@/components/ConflictResolutionDialog";
 import { useUpdateTaskMutation } from "@/api/tasks";
 import { GET_TASKS } from "@/api/tasks/constants";
 import { getClientId } from "@/utils/clientId";
@@ -18,6 +19,7 @@ interface TaskBoardViewProps {
     isLoading: boolean;
     isFetching: boolean;
     onTaskClick: (task: ITask) => void;
+    onConflict?: (data: ConflictData) => void;
 }
 
 interface ColumnProps {
@@ -26,9 +28,10 @@ interface ColumnProps {
     color: string;
     tasks: ITask[];
     onTaskClick: (task: ITask) => void;
+    onConflict?: (data: ConflictData) => void;
 }
 
-const BoardColumn = ({ status, label, color, tasks, onTaskClick }: ColumnProps) => {
+const BoardColumn = ({ status, label, color, tasks, onTaskClick, onConflict }: ColumnProps) => {
     const { ref, isDropTarget } = useDroppable({ id: status });
 
     return (
@@ -79,6 +82,7 @@ const BoardColumn = ({ status, label, color, tasks, onTaskClick }: ColumnProps) 
                             column={status}
                             index={index}
                             onClick={() => onTaskClick(task)}
+                            onConflict={onConflict}
                         />
                     ))
                 )}
@@ -110,7 +114,7 @@ const BoardSkeleton = () => (
     </Box>
 );
 
-const TaskBoardView = ({ tasks, isLoading, isFetching, onTaskClick }: TaskBoardViewProps) => {
+const TaskBoardView = ({ tasks, isLoading, isFetching, onTaskClick, onConflict }: TaskBoardViewProps) => {
     const queryClient = useQueryClient();
     const { mutate: updateTask } = useUpdateTaskMutation();
 
@@ -138,6 +142,20 @@ const TaskBoardView = ({ tasks, isLoading, isFetching, onTaskClick }: TaskBoardV
         const newStatus = targetData?.column ?? target.id as TaskStatus;
         if (taskData.column === newStatus) return;
 
+        // Optimistic update — move card to new column immediately
+        queryClient.setQueriesData<IGetTasksResponse>(
+            { queryKey: [GET_TASKS] },
+            (old) => {
+                if (!old) return old;
+                return {
+                    ...old,
+                    tasks: old.tasks.map((t) =>
+                        t.id === taskData.task.id ? { ...t, status: newStatus } : t
+                    ),
+                };
+            }
+        );
+
         updateTask(
             {
                 id: taskData.task.id,
@@ -147,9 +165,10 @@ const TaskBoardView = ({ tasks, isLoading, isFetching, onTaskClick }: TaskBoardV
             },
             {
                 onError: (error) => {
+                    // Roll back optimistic update
+                    queryClient.invalidateQueries({ queryKey: [GET_TASKS] });
                     if (error.response?.status === 409) {
                         toast.warning("Conflict detected — task was modified. Refreshing...");
-                        queryClient.invalidateQueries({ queryKey: [GET_TASKS] });
                     } else {
                         toast.error(error.response?.data?.message || "Failed to update status");
                     }
@@ -184,6 +203,7 @@ const TaskBoardView = ({ tasks, isLoading, isFetching, onTaskClick }: TaskBoardV
                         color={opt.color}
                         tasks={grouped[opt.value]}
                         onTaskClick={onTaskClick}
+                        onConflict={onConflict}
                     />
                 ))}
             </Box>

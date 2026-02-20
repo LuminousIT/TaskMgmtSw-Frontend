@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Menu, MenuItem } from "@mui/material";
 import { Delete, Edit } from "@mui/icons-material";
 import type { ITask } from "@/api/tasks/types";
+import type { ConflictData } from "@/components/ConflictResolutionDialog";
 import DeleteConfirmDialog from "./DeleteConfirmDialog";
 import TaskDetailModal from "./TaskDetailModal";
 
@@ -9,9 +10,10 @@ interface TaskContextMenuProps {
     anchorPosition: { x: number; y: number } | null;
     onClose: () => void;
     task: ITask;
+    onConflict?: (data: ConflictData) => void;
 }
 
-const TaskContextMenu = ({ anchorPosition, onClose, task }: TaskContextMenuProps) => {
+const TaskContextMenu = ({ anchorPosition, onClose, task, onConflict }: TaskContextMenuProps) => {
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [detailOpen, setDetailOpen] = useState(false);
 
@@ -54,6 +56,7 @@ const TaskContextMenu = ({ anchorPosition, onClose, task }: TaskContextMenuProps
                     task={task}
                     open={detailOpen}
                     onClose={() => setDetailOpen(false)}
+                    onConflict={onConflict}
                 />
             )}
         </>

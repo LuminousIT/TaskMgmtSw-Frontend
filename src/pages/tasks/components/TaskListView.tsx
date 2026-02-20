@@ -14,6 +14,7 @@ import {
 } from "@mui/material";
 import { CalendarToday, MoreVert } from "@mui/icons-material";
 import type { ITask } from "@/api/tasks/types";
+import type { ConflictData } from "@/components/ConflictResolutionDialog";
 import { formatDueDate, isOverdue } from "../utils";
 import StatusChip from "./StatusChip";
 import PriorityIndicator from "./PriorityIndicator";
@@ -32,9 +33,10 @@ interface TaskListViewProps {
     page: number;
     onPageChange: (page: number) => void;
     onTaskClick: (task: ITask) => void;
+    onConflict?: (data: ConflictData) => void;
 }
 
-const TaskListRow = ({ task, onTaskClick }: { task: ITask; onTaskClick: (task: ITask) => void }) => {
+const TaskListRow = ({ task, onTaskClick, onConflict }: { task: ITask; onTaskClick: (task: ITask) => void; onConflict?: (data: ConflictData) => void }) => {
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
 
     return (
@@ -118,6 +120,7 @@ const TaskListRow = ({ task, onTaskClick }: { task: ITask; onTaskClick: (task: I
                 anchorPosition={contextMenu}
                 onClose={() => setContextMenu(null)}
                 task={task}
+                onConflict={onConflict}
             />
         </>
     );
@@ -131,6 +134,7 @@ const TaskListView = ({
     page,
     onPageChange,
     onTaskClick,
+    onConflict,
 }: TaskListViewProps) => {
     if (!isLoading && tasks.length === 0) {
         return <TaskEmptyState />;
@@ -155,7 +159,7 @@ const TaskListView = ({
                     ) : (
                         <TableBody>
                             {tasks.map((task) => (
-                                <TaskListRow key={task.id} task={task} onTaskClick={onTaskClick} />
+                                <TaskListRow key={task.id} task={task} onTaskClick={onTaskClick} onConflict={onConflict} />
                             ))}
                         </TableBody>
                     )}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Box, Card, CardContent, Chip, IconButton, Typography } from "@mui/material";
 import { CalendarToday, MoreVert } from "@mui/icons-material";
 import type { ITask } from "@/api/tasks/types";
+import type { ConflictData } from "@/components/ConflictResolutionDialog";
 import { formatDueDate, isOverdue } from "../utils";
 import StatusChip from "./StatusChip";
 import PriorityIndicator from "./PriorityIndicator";
@@ -10,9 +11,10 @@ import TaskContextMenu from "./TaskContextMenu";
 interface TaskCardProps {
     task: ITask;
     onClick: () => void;
+    onConflict?: (data: ConflictData) => void;
 }
 
-const TaskCard = ({ task, onClick }: TaskCardProps) => {
+const TaskCard = ({ task, onClick, onConflict }: TaskCardProps) => {
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
 
     return (
@@ -125,6 +127,7 @@ const TaskCard = ({ task, onClick }: TaskCardProps) => {
                 anchorPosition={contextMenu}
                 onClose={() => setContextMenu(null)}
                 task={task}
+                onConflict={onConflict}
             />
         </>
     );

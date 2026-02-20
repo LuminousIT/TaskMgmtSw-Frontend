@@ -91,6 +91,7 @@ const Tasks = () => {
                     isLoading={isLoading}
                     isFetching={isFetching}
                     onTaskClick={setDetailTask}
+                    onConflict={setConflictData}
                 />
             ) : viewMode === "list" ? (
                 <TaskListView
@@ -101,6 +102,7 @@ const Tasks = () => {
                     page={filters.page}
                     onPageChange={setPage}
                     onTaskClick={setDetailTask}
+                    onConflict={setConflictData}
                 />
             ) : (
                 <TaskGrid
@@ -111,6 +113,7 @@ const Tasks = () => {
                     page={filters.page}
                     onPageChange={setPage}
                     onTaskClick={setDetailTask}
+                    onConflict={setConflictData}
                 />
             )}
 

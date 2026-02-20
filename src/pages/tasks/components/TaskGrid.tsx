@@ -1,5 +1,6 @@
 import { Box, Grid, Pagination } from "@mui/material";
 import type { ITask } from "@/api/tasks/types";
+import type { ConflictData } from "@/components/ConflictResolutionDialog";
 import TaskCard from "./TaskCard";
 import TaskCardSkeleton from "./TaskCardSkeleton";
 import TaskEmptyState from "./TaskEmptyState";
@@ -15,6 +16,7 @@ interface TaskGridProps {
     page: number;
     onPageChange: (page: number) => void;
     onTaskClick: (task: ITask) => void;
+    onConflict?: (data: ConflictData) => void;
 }
 
 const TaskGrid = ({
@@ -25,6 +27,7 @@ const TaskGrid = ({
     page,
     onPageChange,
     onTaskClick,
+    onConflict,
 }: TaskGridProps) => {
     if (isLoading) {
         return (
@@ -51,7 +54,7 @@ const TaskGrid = ({
             >
                 {tasks.map((task) => (
                     <Grid size={{ xs: 12, sm: 6, md: 4 }} key={task.id}>
-                        <TaskCard task={task} onClick={() => onTaskClick(task)} />
+                        <TaskCard task={task} onClick={() => onTaskClick(task)} onConflict={onConflict} />
                     </Grid>
                 ))}
             </Grid>

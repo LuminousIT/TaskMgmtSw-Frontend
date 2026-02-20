@@ -3,6 +3,7 @@ import { Box, Card, CardContent, Chip, IconButton, Typography } from "@mui/mater
 import { CalendarToday, MoreVert } from "@mui/icons-material";
 import { useSortable } from "@dnd-kit/react/sortable";
 import type { ITask, TaskStatus } from "@/api/tasks/types";
+import type { ConflictData } from "@/components/ConflictResolutionDialog";
 import { formatDueDate, isOverdue } from "../utils";
 import PriorityIndicator from "./PriorityIndicator";
 import TaskContextMenu from "./TaskContextMenu";
@@ -12,9 +13,10 @@ interface TaskBoardCardProps {
     column: TaskStatus;
     index: number;
     onClick: () => void;
+    onConflict?: (data: ConflictData) => void;
 }
 
-const TaskBoardCard = ({ task, column, index, onClick }: TaskBoardCardProps) => {
+const TaskBoardCard = ({ task, column, index, onClick, onConflict }: TaskBoardCardProps) => {
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
 
     const { ref, isDragging } = useSortable({
@@ -28,7 +30,7 @@ const TaskBoardCard = ({ task, column, index, onClick }: TaskBoardCardProps) => 
         <>
             <Card
                 ref={ref}
-                onClick={onClick}
+                onClick={() => { if (!isDragging) onClick(); }}
                 onContextMenu={(e) => {
                     e.preventDefault();
                     setContextMenu({ x: e.clientX, y: e.clientY });
@@ -113,6 +115,7 @@ const TaskBoardCard = ({ task, column, index, onClick }: TaskBoardCardProps) => 
                 anchorPosition={contextMenu}
                 onClose={() => setContextMenu(null)}
                 task={task}
+                onConflict={onConflict}
             />
         </>
     );
