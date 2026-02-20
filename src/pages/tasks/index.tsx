@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Box, Button, Typography } from "@mui/material";
 import { Add } from "@mui/icons-material";
 import { useGetTasksQuery } from "@/api/tasks";
@@ -9,6 +9,7 @@ import TaskFilterBar from "./components/TaskFilterBar";
 import type { TaskViewMode } from "./components/TaskFilterBar";
 import TaskGrid from "./components/TaskGrid";
 import TaskListView from "./components/TaskListView";
+import TaskBoardView from "./components/TaskBoardView";
 import TaskDetailModal from "./components/TaskDetailModal";
 
 const VIEW_STORAGE_KEY = "tms_task_view";
@@ -41,7 +42,12 @@ const Tasks = () => {
         removeFilter,
     } = useTaskFilters();
 
-    const { data, isLoading, isFetching } = useGetTasksQuery(apiParams);
+    const queryParams = useMemo(
+        () => viewMode === "board" ? { ...apiParams, limit: 100 } : apiParams,
+        [apiParams, viewMode]
+    );
+
+    const { data, isLoading, isFetching } = useGetTasksQuery(queryParams);
 
     return (
         <Box sx={{ p: 3 }}>
@@ -76,8 +82,15 @@ const Tasks = () => {
                 onClearAll={clearAll}
             />
 
-            {viewMode === "grid" ? (
-                <TaskGrid
+            {viewMode === "board" ? (
+                <TaskBoardView
+                    tasks={data?.tasks ?? []}
+                    isLoading={isLoading}
+                    isFetching={isFetching}
+                    onTaskClick={setDetailTask}
+                />
+            ) : viewMode === "list" ? (
+                <TaskListView
                     tasks={data?.tasks ?? []}
                     pagination={data?.pagination}
                     isLoading={isLoading}
@@ -87,7 +100,7 @@ const Tasks = () => {
                     onTaskClick={setDetailTask}
                 />
             ) : (
-                <TaskListView
+                <TaskGrid
                     tasks={data?.tasks ?? []}
                     pagination={data?.pagination}
                     isLoading={isLoading}

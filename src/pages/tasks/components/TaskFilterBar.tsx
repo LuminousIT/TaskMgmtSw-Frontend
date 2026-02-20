@@ -24,6 +24,7 @@ import {
     Clear,
     FilterList,
     Search,
+    ViewKanban,
     ViewList,
     ViewModule,
 } from "@mui/icons-material";
@@ -32,7 +33,7 @@ import type { IGetTasksParams, TaskPriority, TaskStatus } from "@/api/tasks/type
 import { PRIORITY_OPTIONS, SORT_OPTIONS, STATUS_OPTIONS } from "../constants";
 import TagsPicker from "@/components/TagsPicker";
 
-export type TaskViewMode = "grid" | "list";
+export type TaskViewMode = "grid" | "list" | "board";
 
 interface TaskFilterBarProps {
     filters: TaskFiltersState;
@@ -256,6 +257,9 @@ const TaskFilterBar = ({
                         </ToggleButton>
                         <ToggleButton value="list" aria-label="List view">
                             <ViewList fontSize="small" />
+                        </ToggleButton>
+                        <ToggleButton value="board" aria-label="Board view">
+                            <ViewKanban fontSize="small" />
                         </ToggleButton>
                     </ToggleButtonGroup>
                 </Box>
