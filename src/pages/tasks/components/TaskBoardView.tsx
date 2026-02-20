@@ -3,9 +3,11 @@ import { Box, Card, Skeleton, Stack, Typography } from "@mui/material";
 import { DragDropProvider } from "@dnd-kit/react";
 import { useDroppable } from "@dnd-kit/react";
 import type { DragEndEvent } from "@dnd-kit/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import type { ITask, TaskStatus } from "@/api/tasks/types";
 import { useUpdateTaskMutation } from "@/api/tasks";
+import { GET_TASKS } from "@/api/tasks/constants";
 import { getClientId } from "@/utils/clientId";
 import { STATUS_OPTIONS } from "../constants";
 import TaskBoardCard from "./TaskBoardCard";
@@ -109,6 +111,7 @@ const BoardSkeleton = () => (
 );
 
 const TaskBoardView = ({ tasks, isLoading, isFetching, onTaskClick }: TaskBoardViewProps) => {
+    const queryClient = useQueryClient();
     const { mutate: updateTask } = useUpdateTaskMutation();
 
     const grouped = useMemo(() => {
@@ -131,7 +134,6 @@ const TaskBoardView = ({ tasks, isLoading, isFetching, onTaskClick }: TaskBoardV
         if (!taskData?.task) return;
 
         // target can be a sortable card (has data.column) or the droppable column itself (id = status)
-        console.log({ target: target.data })
         const targetData = target.data as { column?: TaskStatus } | undefined;
         const newStatus = targetData?.column ?? target.id as TaskStatus;
         if (taskData.column === newStatus) return;
@@ -145,7 +147,12 @@ const TaskBoardView = ({ tasks, isLoading, isFetching, onTaskClick }: TaskBoardV
             },
             {
                 onError: (error) => {
-                    toast.error(error.response?.data?.message || "Failed to update status");
+                    if (error.response?.status === 409) {
+                        toast.warning("Conflict detected — task was modified. Refreshing...");
+                        queryClient.invalidateQueries({ queryKey: [GET_TASKS] });
+                    } else {
+                        toast.error(error.response?.data?.message || "Failed to update status");
+                    }
                 },
             }
         );

@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Box, Chip, Menu, MenuItem } from "@mui/material";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import { useUpdateTaskMutation } from "@/api/tasks";
 import type { TaskStatus } from "@/api/tasks/types";
+import { GET_TASKS } from "@/api/tasks/constants";
 import { getClientId } from "@/utils/clientId";
 import { STATUS_OPTIONS } from "../constants";
 
@@ -15,6 +17,7 @@ interface StatusChipProps {
 
 const StatusChip = ({ status, taskId, version, onClick }: StatusChipProps) => {
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+    const queryClient = useQueryClient();
     const { mutate: updateTask, isPending } = useUpdateTaskMutation();
 
     const currentOption = STATUS_OPTIONS.find((o) => o.value === status)!;
@@ -24,7 +27,12 @@ const StatusChip = ({ status, taskId, version, onClick }: StatusChipProps) => {
             { id: taskId, status: newStatus, version, clientId: getClientId() },
             {
                 onError: (error) => {
-                    toast.error(error.response?.data?.message || "Failed to update status");
+                    if (error.response?.status === 409) {
+                        toast.warning("Conflict detected — task was modified. Refreshing...");
+                        queryClient.invalidateQueries({ queryKey: [GET_TASKS] });
+                    } else {
+                        toast.error(error.response?.data?.message || "Failed to update status");
+                    }
                 },
             }
         );

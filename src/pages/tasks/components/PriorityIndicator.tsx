@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Box, ButtonBase, Menu, MenuItem, Typography } from "@mui/material";
 import { Flag } from "@mui/icons-material";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import { useUpdateTaskMutation } from "@/api/tasks";
 import type { TaskPriority } from "@/api/tasks/types";
+import { GET_TASKS } from "@/api/tasks/constants";
 import { getClientId } from "@/utils/clientId";
 import { PRIORITY_OPTIONS } from "../constants";
 
@@ -16,6 +18,7 @@ interface PriorityIndicatorProps {
 
 const PriorityIndicator = ({ priority, taskId, version, onClick }: PriorityIndicatorProps) => {
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+    const queryClient = useQueryClient();
     const { mutate: updateTask, isPending } = useUpdateTaskMutation();
 
     const currentOption = PRIORITY_OPTIONS.find((o) => o.value === priority)!;
@@ -25,7 +28,12 @@ const PriorityIndicator = ({ priority, taskId, version, onClick }: PriorityIndic
             { id: taskId, priority: newPriority, version, clientId: getClientId() },
             {
                 onError: (error) => {
-                    toast.error(error.response?.data?.message || "Failed to update priority");
+                    if (error.response?.status === 409) {
+                        toast.warning("Conflict detected — task was modified. Refreshing...");
+                        queryClient.invalidateQueries({ queryKey: [GET_TASKS] });
+                    } else {
+                        toast.error(error.response?.data?.message || "Failed to update priority");
+                    }
                 },
             }
         );

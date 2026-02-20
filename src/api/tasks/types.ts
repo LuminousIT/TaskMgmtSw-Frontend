@@ -39,6 +39,7 @@ export interface ICreateTaskPayload {
 export interface ICreateTaskResponse {
     task: ITask;
     tempId?: string;
+    conflict?: IConflictError;
 }
 
 export interface IGetTagsResponse {
@@ -127,12 +128,44 @@ export interface IDeleteTaskPayload {
 
 export interface IUpdateTaskResponse {
     task: ITask;
+    conflict?: IConflictError;
 }
 
 export interface IDeleteTaskResponse {
     success: boolean;
     message: string;
 }
+
+export interface IConflictDetails {
+    clientVersion: number;
+    serverVersion: number;
+}
+
+export interface IConflictError {
+    hasConflict: boolean;
+    message: string;
+    clientVersion: Partial<ITask>;
+    serverVersion: ITask;
+}
+
+export interface IResolveConflictPayload {
+    clientId: string;
+    entityType: "task" | "tag";
+    entityId: string;
+    resolution: "use-local" | "use-remote" | "merge";
+    localVersion?: Partial<ITask>;
+    mergedData?: Partial<ITask>;
+    serverVersion: ITask;
+}
+
+export interface IResolveConflictResponse {
+    success: boolean;
+    entity: ITask;
+    version: number;
+    message: string;
+}
+
+export type TResolveConflictRequest = (data: IResolveConflictPayload) => Promise<IResolveConflictResponse>;
 
 export type TCreateTaskRequest = (data: ICreateTaskPayload) => Promise<ICreateTaskResponse>;
 export type TGetTasksRequest = (params?: IGetTasksParams) => Promise<IGetTasksResponse>;

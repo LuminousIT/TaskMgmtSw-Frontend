@@ -23,6 +23,9 @@ import type {
     TDeleteTaskRequest,
     TGetTasksRequest,
     TGetTagsRequest,
+    IResolveConflictPayload,
+    IResolveConflictResponse,
+    TResolveConflictRequest,
     TUpdateTagRequest,
     TUpdateTaskRequest,
 } from "./types";
@@ -57,6 +60,7 @@ export const useGetTasksQuery = (
 ) => {
     return useQuery({
         ...options,
+        refetchOnWindowFocus: false,
         queryKey: [GET_TASKS, params],
         queryFn: () => getTasksRequest(params),
     });
@@ -154,6 +158,23 @@ export const useDeleteTaskMutation = (
         ...options,
         mutationFn: ({ id, version }: { id: string; version: number }) =>
             deleteTaskRequest(id, { version }),
+        onSuccess: (...args) => {
+            queryClient.invalidateQueries({ queryKey: [GET_TASKS] });
+            options?.onSuccess?.(...args);
+        },
+    });
+};
+
+export const resolveConflictRequest: TResolveConflictRequest = async (payload) =>
+    (await axios.post("/api/v1/sync/resolve", payload)).data;
+
+export const useResolveConflictMutation = (
+    options?: CustomUseMutationOptions<IResolveConflictPayload, IResolveConflictResponse>
+) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        ...options,
+        mutationFn: (payload: IResolveConflictPayload) => resolveConflictRequest(payload),
         onSuccess: (...args) => {
             queryClient.invalidateQueries({ queryKey: [GET_TASKS] });
             options?.onSuccess?.(...args);

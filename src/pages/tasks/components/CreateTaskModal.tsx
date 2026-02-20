@@ -21,6 +21,7 @@ import type { SubmitHandler } from "react-hook-form";
 import { toast } from "react-toastify";
 import { useCreateTaskMutation } from "@/api/tasks";
 import type { ICreateTaskFormValues, ICreateTaskPayload } from "@/api/tasks/types";
+import type { ConflictData } from "@/components/ConflictResolutionDialog";
 import { getClientId } from "@/utils/clientId";
 import InlineTextField from "@/components/InlineTextField";
 import PopoverSelect from "@/components/PopoverSelect";
@@ -30,9 +31,10 @@ import { STATUS_OPTIONS, PRIORITY_OPTIONS } from "../constants";
 interface CreateTaskModalProps {
     open: boolean;
     onClose: () => void;
+    onConflict?: (data: ConflictData) => void;
 }
 
-const CreateTaskModal = ({ open, onClose }: CreateTaskModalProps) => {
+const CreateTaskModal = ({ open, onClose, onConflict }: CreateTaskModalProps) => {
     const { mutate: createTask, isPending } = useCreateTaskMutation();
 
     const {
@@ -73,10 +75,18 @@ const CreateTaskModal = ({ open, onClose }: CreateTaskModalProps) => {
         };
 
         createTask(payload, {
-            onSuccess: () => {
+            onSuccess: (response) => {
                 toast.success("Task created successfully!");
                 reset();
                 onClose();
+                if (response.conflict?.hasConflict) {
+                    onConflict?.({
+                        taskId: response.task.id,
+                        localPayload: { ...payload },
+                        staleTask: response.conflict.clientVersion,
+                        serverTask: response.conflict.serverVersion,
+                    });
+                }
             },
             onError: (error) => {
                 const message =

@@ -11,12 +11,15 @@ import TaskGrid from "./components/TaskGrid";
 import TaskListView from "./components/TaskListView";
 import TaskBoardView from "./components/TaskBoardView";
 import TaskDetailModal from "./components/TaskDetailModal";
+import ConflictResolutionDialog from "@/components/ConflictResolutionDialog";
+import type { ConflictData } from "@/components/ConflictResolutionDialog";
 
 const VIEW_STORAGE_KEY = "tms_task_view";
 
 const Tasks = () => {
     const [createOpen, setCreateOpen] = useState(false);
     const [detailTask, setDetailTask] = useState<ITask | null>(null);
+    const [conflictData, setConflictData] = useState<ConflictData | null>(null);
     const [viewMode, setViewMode] = useState<TaskViewMode>(
         () => (localStorage.getItem(VIEW_STORAGE_KEY) as TaskViewMode) || "grid"
     );
@@ -111,12 +114,28 @@ const Tasks = () => {
                 />
             )}
 
-            <CreateTaskModal open={createOpen} onClose={() => setCreateOpen(false)} />
+            <CreateTaskModal
+                open={createOpen}
+                onClose={() => setCreateOpen(false)}
+                onConflict={setConflictData}
+            />
             {detailTask && (
                 <TaskDetailModal
                     task={detailTask}
                     open={!!detailTask}
                     onClose={() => setDetailTask(null)}
+                    onConflict={(data) => {
+                        setDetailTask(null);
+                        setConflictData(data);
+                    }}
+                />
+            )}
+
+            {conflictData && (
+                <ConflictResolutionDialog
+                    open={!!conflictData}
+                    onClose={() => setConflictData(null)}
+                    conflictData={conflictData}
                 />
             )}
         </Box>

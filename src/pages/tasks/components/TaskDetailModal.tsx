@@ -21,6 +21,7 @@ import type { SubmitHandler } from "react-hook-form";
 import { toast } from "react-toastify";
 import { useUpdateTaskMutation } from "@/api/tasks";
 import type { ICreateTaskFormValues, ITask, IUpdateTaskPayload } from "@/api/tasks/types";
+import type { ConflictData } from "@/components/ConflictResolutionDialog";
 import { getClientId } from "@/utils/clientId";
 import InlineTextField from "@/components/InlineTextField";
 import PopoverSelect from "@/components/PopoverSelect";
@@ -31,9 +32,10 @@ interface TaskDetailModalProps {
     task: ITask;
     open: boolean;
     onClose: () => void;
+    onConflict?: (data: ConflictData) => void;
 }
 
-const TaskDetailModal = ({ task, open, onClose }: TaskDetailModalProps) => {
+const TaskDetailModal = ({ task, open, onClose, onConflict }: TaskDetailModalProps) => {
     const { mutate: updateTask, isPending } = useUpdateTaskMutation();
 
     const {
@@ -87,13 +89,30 @@ const TaskDetailModal = ({ task, open, onClose }: TaskDetailModalProps) => {
         updateTask(
             { id: task.id, ...payload, version: task.version },
             {
-                onSuccess: () => {
+                onSuccess: (response) => {
                     toast.success("Task updated successfully!");
                     onClose();
+                    if (response.conflict?.hasConflict) {
+                        onConflict?.({
+                            taskId: response.task.id,
+                            localPayload: payload,
+                            staleTask: response.conflict.clientVersion,
+                            serverTask: response.conflict.serverVersion,
+                        });
+                    }
                 },
                 onError: (error) => {
-                    const message = error.response?.data?.message || "Failed to update task.";
-                    toast.error(message);
+                    if (error.response?.status === 409 && onConflict) {
+                        onClose();
+                        onConflict({
+                            taskId: task.id,
+                            localPayload: payload,
+                            staleTask: task,
+                        });
+                    } else {
+                        const message = error.response?.data?.message || "Failed to update task.";
+                        toast.error(message);
+                    }
                 },
             }
         );
