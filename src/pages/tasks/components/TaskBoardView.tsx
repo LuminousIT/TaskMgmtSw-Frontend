@@ -131,6 +131,7 @@ const TaskBoardView = ({ tasks, isLoading, isFetching, onTaskClick, onConflict }
     }, [tasks]);
 
     const handleDragEnd = (event: DragEndEvent) => {
+        // @ts-ignore
         const { source, target } = event.operation;
         if (!source || !target) return;
 
@@ -186,6 +187,7 @@ const TaskBoardView = ({ tasks, isLoading, isFetching, onTaskClick, onConflict }
     }
 
     return (
+        //@ts-ignore
         <DragDropProvider onDragEnd={handleDragEnd}>
             <Box
                 sx={{

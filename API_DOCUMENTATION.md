@@ -7,6 +7,7 @@
 - [API Endpoints](#api-endpoints)
 - [Task Management](#task-management)
 - [Tag Management](#tag-management)
+- [Dashboard](#dashboard)
 - [Sync API](#sync-api)
 - [Data Models](#data-models)
 - [Advanced Features](#advanced-features)
@@ -27,13 +28,14 @@ This is a RESTful API for a Task Management System built with Flask. The API use
 - Advanced filtering, search, and pagination
 - Optimistic locking for conflict prevention
 - Bulk operations for efficient syncing
+- Dashboard with task summary statistics
 - Offline sync support
 
 **Base URL:** `http://localhost:5000/api/v1`
 
 **Tech Stack:**
 - Flask 3.1.2
-- PostgreSQL (SQLAlchemy 2.0.25)
+- PostgreSQL (SQLAlchemy 2.0.45)
 - JWT Authentication (PyJWT 2.9.0)
 - Bcrypt Password Hashing
 
@@ -144,7 +146,10 @@ curl http://localhost:5000/api/v1/health
 **Response: 200 OK**
 ```json
 {
-  "status": "healthy"
+  "status": "healthy",
+  "version": "1.0",
+  "timestamp": "2026-01-24T10:30:00Z",
+  "environment": "development"
 }
 ```
 
@@ -624,7 +629,7 @@ curl -X PUT http://localhost:5000/api/v1/tasks/550e8400-e29b-41d4-a716-446655440
 
 **Note:** The `version` field is required for optimistic locking. It must match the current task version.
 
-**Response: 200 OK** (Success)
+**Response: 200 OK** (Success - no conflict)
 ```json
 {
   "task": {
@@ -646,6 +651,38 @@ curl -X PUT http://localhost:5000/api/v1/tasks/550e8400-e29b-41d4-a716-446655440
   },
   "conflict": {
     "hasConflict": false
+  }
+}
+```
+
+**Response: 200 OK** (Version mismatch - conflict detected)
+
+When the provided `version` doesn't match the server's current version, the response includes the full conflict details instead of raising an error. This allows clients to inspect both versions and decide how to resolve.
+
+```json
+{
+  "task": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "title": "Server's current title",
+    "status": "in-progress",
+    "version": 3,
+    "...": "...full task object..."
+  },
+  "conflict": {
+    "hasConflict": true,
+    "serverVersion": {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "title": "Server's current title",
+      "status": "in-progress",
+      "version": 3,
+      "...": "...full task object..."
+    },
+    "clientVersion": {
+      "title": "Client's attempted title",
+      "status": "done",
+      "version": 1
+    },
+    "message": "Task modified by another client"
   }
 }
 ```
@@ -736,18 +773,26 @@ Delete a task (soft delete by default, or permanent delete with `permanent=true`
 **Query Parameters:**
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `version` | integer | Yes | - | Current version of the task (for optimistic locking) |
 | `permanent` | boolean | No | false | If true, permanently delete; otherwise soft delete |
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `version` | integer | Yes | Current version of the task (for optimistic locking) |
 
 **Request:**
 ```bash
 # Soft delete (default)
-curl -X DELETE "http://localhost:5000/api/v1/tasks/550e8400-e29b-41d4-a716-446655440000?version=3" \
-  -H "Authorization: Bearer <access_token>"
+curl -X DELETE "http://localhost:5000/api/v1/tasks/550e8400-e29b-41d4-a716-446655440000" \
+  -H "Authorization: Bearer <access_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"version": 3}'
 
 # Permanent delete
-curl -X DELETE "http://localhost:5000/api/v1/tasks/550e8400-e29b-41d4-a716-446655440000?version=3&permanent=true" \
-  -H "Authorization: Bearer <access_token>"
+curl -X DELETE "http://localhost:5000/api/v1/tasks/550e8400-e29b-41d4-a716-446655440000?permanent=true" \
+  -H "Authorization: Bearer <access_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"version": 3}'
 ```
 
 **Response: 200 OK** (Soft Delete)
@@ -1000,7 +1045,12 @@ curl -X GET "http://localhost:5000/api/v1/tags?sortBy=createdAt&sortOrder=desc" 
       "name": "Work",
       "color": "#FF5733",
       "createdAt": "2026-01-24T10:00:00Z",
-      "updatedAt": "2026-01-24T10:00:00Z"
+      "updatedAt": "2026-01-24T10:00:00Z",
+      "version": 1,
+      "lastSyncedAt": null,
+      "clientId": null,
+      "isDeleted": false,
+      "deletedAt": null
     },
     {
       "id": "650e8400-e29b-41d4-a716-446655440002",
@@ -1008,7 +1058,12 @@ curl -X GET "http://localhost:5000/api/v1/tags?sortBy=createdAt&sortOrder=desc" 
       "name": "Personal",
       "color": "#808080",
       "createdAt": "2026-01-24T10:05:00Z",
-      "updatedAt": "2026-01-24T10:05:00Z"
+      "updatedAt": "2026-01-24T10:05:00Z",
+      "version": 1,
+      "lastSyncedAt": null,
+      "clientId": null,
+      "isDeleted": false,
+      "deletedAt": null
     }
   ],
   "pagination": {
@@ -1052,7 +1107,12 @@ curl -X GET http://localhost:5000/api/v1/tags/650e8400-e29b-41d4-a716-4466554400
     "name": "Work",
     "color": "#FF5733",
     "createdAt": "2026-01-24T10:00:00Z",
-    "updatedAt": "2026-01-24T10:00:00Z"
+    "updatedAt": "2026-01-24T10:00:00Z",
+    "version": 1,
+    "lastSyncedAt": null,
+    "clientId": null,
+    "isDeleted": false,
+    "deletedAt": null
   }
 }
 ```
@@ -1113,7 +1173,12 @@ curl -X POST http://localhost:5000/api/v1/tags \
     "name": "Work",
     "color": "#FF5733",
     "createdAt": "2026-01-24T10:00:00Z",
-    "updatedAt": "2026-01-24T10:00:00Z"
+    "updatedAt": "2026-01-24T10:00:00Z",
+    "version": 1,
+    "lastSyncedAt": null,
+    "clientId": null,
+    "isDeleted": false,
+    "deletedAt": null
   }
 }
 ```
@@ -1187,7 +1252,12 @@ curl -X PUT http://localhost:5000/api/v1/tags/650e8400-e29b-41d4-a716-4466554400
     "name": "Work Projects",
     "color": "#00FF00",
     "createdAt": "2026-01-24T10:00:00Z",
-    "updatedAt": "2026-01-24T10:15:00Z"
+    "updatedAt": "2026-01-24T10:15:00Z",
+    "version": 2,
+    "lastSyncedAt": null,
+    "clientId": null,
+    "isDeleted": false,
+    "deletedAt": null
   }
 }
 ```
@@ -1249,7 +1319,12 @@ curl -X PATCH http://localhost:5000/api/v1/tags/650e8400-e29b-41d4-a716-44665544
     "name": "Work Projects",
     "color": "#0000FF",
     "createdAt": "2026-01-24T10:00:00Z",
-    "updatedAt": "2026-01-24T10:20:00Z"
+    "updatedAt": "2026-01-24T10:20:00Z",
+    "version": 3,
+    "lastSyncedAt": null,
+    "clientId": null,
+    "isDeleted": false,
+    "deletedAt": null
   }
 }
 ```
@@ -1301,6 +1376,70 @@ curl -X DELETE http://localhost:5000/api/v1/tags/650e8400-e29b-41d4-a716-4466554
   }
   ```
 - `403 Forbidden`: Not authorized to access this tag
+- `401 Unauthorized`: Missing or invalid access token
+
+---
+
+## Dashboard
+
+The Dashboard endpoint provides aggregated task statistics for the authenticated user in a single request, avoiding the need for the frontend to fetch all tasks and compute stats client-side.
+
+All dashboard endpoints require authentication via Bearer token.
+
+---
+
+### GET /api/v1/dashboard
+
+Get task summary statistics for the authenticated user.
+
+**Authentication:** Required (Bearer token)
+
+**Request:**
+```bash
+curl -X GET http://localhost:5000/api/v1/dashboard \
+  -H "Authorization: Bearer <access_token>"
+```
+
+**Response: 200 OK**
+```json
+{
+  "tasksByStatus": {
+    "todo": 12,
+    "in-progress": 5,
+    "done": 30
+  },
+  "tasksByPriority": {
+    "low": 8,
+    "medium": 15,
+    "high": 10,
+    "urgent": 2
+  },
+  "overdue": 3,
+  "dueToday": 2,
+  "dueThisWeek": 7,
+  "totalTasks": 47,
+  "completionRate": 63.8
+}
+```
+
+**Response Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `tasksByStatus` | object | Count of active tasks grouped by status (`todo`, `in-progress`, `done`) |
+| `tasksByPriority` | object | Count of active tasks grouped by priority (`low`, `medium`, `high`, `urgent`) |
+| `overdue` | integer | Count of incomplete tasks with a due date in the past |
+| `dueToday` | integer | Count of active tasks due today |
+| `dueThisWeek` | integer | Count of active tasks due between today and end of the current week (Sunday) |
+| `totalTasks` | integer | Total count of active (non-deleted) tasks |
+| `completionRate` | float | Percentage of tasks with status `done`, rounded to 1 decimal place (0.0 if no tasks) |
+
+**Notes:**
+- All counts exclude soft-deleted tasks
+- `overdue` only counts tasks that are not `done`
+- `dueThisWeek` includes tasks due today
+
+**Error Responses:**
 - `401 Unauthorized`: Missing or invalid access token
 
 ---
@@ -2284,8 +2423,10 @@ curl -X PATCH http://localhost:5000/api/v1/tasks/$TASK_ID \
 
 **7. Delete task (soft delete)**
 ```bash
-curl -X DELETE "http://localhost:5000/api/v1/tasks/$TASK_ID?version=3" \
-  -H "Authorization: Bearer $TOKEN"
+curl -X DELETE "http://localhost:5000/api/v1/tasks/$TASK_ID" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"version": 3}'
 ```
 
 **8. Bulk operations**
@@ -2587,7 +2728,7 @@ For validation errors (400), the response includes field-specific errors:
 ### Cookie Security
 - **HTTPOnly**: Prevents JavaScript access
 - **Secure**: HTTPS only in production
-- **SameSite**: Strict (prevents CSRF)
+- **SameSite**: `Strict` in production (prevents CSRF), `Lax` in development
 - **Path**: Scoped to `/api/v1/auth` only
 
 ### Rate Limiting
@@ -2665,7 +2806,7 @@ All endpoints are prefixed with `/api/v1`. Future versions will use `/api/v2`, e
 
 ---
 
-**Last Updated:** January 24, 2026
+**Last Updated:** February 18, 2026
 **API Version:** 1.0
 **Author:** Samuel Olumide Oluwole
 
