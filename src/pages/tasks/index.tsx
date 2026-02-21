@@ -101,6 +101,9 @@ const Tasks = () => {
                     isFetching={isFetching}
                     page={filters.page}
                     onPageChange={setPage}
+                    sortBy={filters.sortBy ?? "createdAt"}
+                    sortOrder={filters.sortOrder ?? "desc"}
+                    onSortChange={setSort}
                     onTaskClick={setDetailTask}
                     onConflict={setConflictData}
                 />
